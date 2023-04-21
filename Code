@@ -1,0 +1,35 @@
+import pandas as pd
+
+# Load the data
+gss_data = pd.read_csv('gss_data.csv')
+
+
+# Drop missing values for income and political affiliation
+gss_data = gss_data.dropna(subset=['realinc', 'polviews'])
+
+# Calculate the Gini coefficient for income
+gini_income = 1 - np.sum(gss_data['realinc'].sort_values().cumsum()) / gss_data['realinc'].sum()
+print('Gini coefficient for income: {:.2f}'.format(gini_income))
+
+# Recode political affiliation variable to create new variable with three levels
+def recode_polviews(x):
+    if x in [1, 2]:
+        return 'liberal'
+    elif x in [3, 4, 5]:
+        return 'moderate'
+    elif x in [6, 7]:
+        return 'conservative'
+
+gss_data['pol_affiliation'] = gss_data['polviews'].apply(recode_polviews)
+
+# Visualizing the Data 
+import seaborn as sns
+import scipy.stats as stats
+
+# Create a scatter plot
+sns.scatterplot(x='realinc', y='polviews', hue='pol_affiliation', data=gss_data)
+
+# Perform a chi-square test of association
+table = pd.crosstab(gss_data['pol_affiliation'], pd.cut(gss_data['realinc'], 3, labels=['low', 'medium', 'high']))
+chi2, p, dof, expected = stats.chi2_contingency(table)
+print('Chi-square test of association: chi2 = {:.2f}, p = {:.4f}'.format(chi2, p))
